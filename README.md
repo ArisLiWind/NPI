@@ -12,6 +12,12 @@ NPI (Neural Perturbational Inference) was developed by the NCC Lab at Southern U
 
 This fork is intended to make the original work easier to understand and reproduce for Chinese-speaking users. It preserves the upstream experiments, notebooks, simulation data, and pretrained whole-brain EC resources, while adding a Chinese README first. A later, clearly separated reproduction layer can use the provided synthetic data and independent external datasets to check surrogate prediction, model FC, and inferred EC without silently changing the original implementation.
 
+The fork is intended for brain-computer interface enthusiasts, neuroscience researchers, and practitioners exploring neurotechnology products or translational applications. It explains the research breakthrough, practical significance, data requirements, validation boundaries, and reuse path so that readers can learn from the work without treating a single inferred EC matrix as a clinical or commercial conclusion.
+
+The central innovation is a testable workflow that learns a dynamical surrogate from observed brain signals and then performs systematic virtual perturbations inside that surrogate. This turns a difficult whole-brain stimulation experiment into a computational experiment that can estimate directed effective connectivity, while still requiring validation against known simulated ground truth and independent stimulation or structural evidence.
+
+For reuse, start with the RNN/WBM simulations, then use external ROI time series with documented preprocessing and an independent directionality benchmark. Report held-out prediction error, model-FC similarity, EC agreement, perturbation sensitivity, and cross-subject/run stability. This is a research and engineering workflow, not an automatic claim of biological causality.
+
 For the scientific interpretation, “effective connectivity” here means directed influence estimated by perturbing a learned surrogate dynamical system; it should not be read as direct proof of biological causality in the measured human data.
 
 [Mapping effective connectivity by virtually perturbing a surrogate brain](https://www.nature.com/articles/s41592-025-02654-x)
