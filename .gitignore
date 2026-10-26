@@ -2,3 +2,4 @@
 __pycache__/
 *.py[cod]
 reproduction_results/*.npy
+reproduction_seed00_*.npy
