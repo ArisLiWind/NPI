@@ -1,119 +1,130 @@
-# NPI
+# NPI：神经扰动推断
 
 <p align="center">
-  <a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a>
+  <a href="README.en.md">English</a> · <a href="README.md">简体中文</a>
 </p>
 
-> This fork keeps the original NPI implementation and documentation structure. The current fork-level additions are limited to bilingual documentation and a reproducibility plan; the scientific method and training code are not changed here.
+> 本 fork 保留原始 NPI 的代码、实验和数据结构。当前新增内容仅限于双语文档与后续复现规划，不改变原论文方法和训练代码。
 
-## **Research context and this fork**
+## 成果来源与本 fork 的目标
 
-NPI (Neural Perturbational Inference) was developed by the NCC Lab at Southern University of Science and Technology (SUSTech), and published as *Mapping effective connectivity by virtually perturbing a surrogate brain* in *Nature Methods* (2025). This repository is the authors' code and data release for that work.
+NPI（Neural Perturbational Inference，神经扰动推断）由南方科技大学 NCC Lab 开发，研究成果发表于 *Nature Methods*（2025）：[Mapping effective connectivity by virtually perturbing a surrogate brain](https://www.nature.com/articles/s41592-025-02654-x)。本仓库是作者公开的代码和数据资源。
 
-This fork is intended to make the original work easier to understand and reproduce for Chinese-speaking users. It preserves the upstream experiments, notebooks, simulation data, and pretrained whole-brain EC resources, while adding a Chinese README first. A later, clearly separated reproduction layer can use the provided synthetic data and independent external datasets to check surrogate prediction, model FC, and inferred EC without silently changing the original implementation.
+这项工作的核心目标，是从观测到的脑区时间序列中学习一个能够近似脑动力学的人工神经网络代理模型，然后在这个“代理脑”中逐个扰动脑区，观察其他脑区的响应，从而估计全脑有向有效连接（effective connectivity, EC）。
 
-The fork is intended for brain-computer interface enthusiasts, neuroscience researchers, and practitioners exploring neurotechnology products or translational applications. It explains the research breakthrough, practical significance, data requirements, validation boundaries, and reuse path so that readers can learn from the work without treating a single inferred EC matrix as a clinical or commercial conclusion.
+本 fork 的目标是：
 
-The central innovation is a testable workflow that learns a dynamical surrogate from observed brain signals and then performs systematic virtual perturbations inside that surrogate. This turns a difficult whole-brain stimulation experiment into a computational experiment that can estimate directed effective connectivity, while still requiring validation against known simulated ground truth and independent stimulation or structural evidence.
+1. 保留作者原始代码、notebook、模拟数据和全脑 EC 资源；
+2. 为中文用户提供与英文 README 对应的说明；
+3. 在不悄悄改变原始实现的前提下，后续增加小规模复现和外部数据验证；
+4. 明确区分“论文原始结果”和“本 fork 的复现实验结果”。
 
-For reuse, start with the RNN/WBM simulations, then use external ROI time series with documented preprocessing and an independent directionality benchmark. Report held-out prediction error, model-FC similarity, EC agreement, perturbation sensitivity, and cross-subject/run stability. This is a research and engineering workflow, not an automatic claim of biological causality.
+## 面向哪些人
 
-For the scientific interpretation, “effective connectivity” here means directed influence estimated by perturbing a learned surrogate dynamical system; it should not be read as direct proof of biological causality in the measured human data.
+这个仓库不仅面向复现论文的专业神经科学研究者，也面向希望理解脑信号建模的脑机接口爱好者、需要评估脑连接算法的研究团队，以及探索神经技术产品化和临床转化的商业化工作者。
 
-[Mapping effective connectivity by virtually perturbing a surrogate brain](https://www.nature.com/articles/s41592-025-02654-x)
+不同读者可以从不同入口开始：
 
-## **Abstract**
+- 脑机接口爱好者：先阅读本节和 `NPI_demo(RNN).ipynb`，理解“时间序列 → 代理脑 → 虚拟扰动 → 有向连接”的完整链路。
+- 研究者：使用带有已知 EC/SC 的 RNN 或 WBM 模拟数据做可控验证，再接入自己的 ROI 时间序列和独立方向性基准。
+- 商业化工作者：重点关注数据需求、模型稳定性、跨个体泛化、可解释性和外部验证，不应把一次 EC 图直接当作临床或产品结论。
 
-Effective connectivity (EC), which reflects the causal interactions between brain regions, is fundamental to understanding information processing in the brain. However, traditional methods for obtaining EC, which rely on neural responses to stimulation, are often invasive or limited in spatial coverage, making them unsuitable for whole-brain EC mapping in humans. To address this gap, we introduce Neural Perturbational Inference (NPI), a data-driven framework for mapping whole-brain EC. NPI employs an artificial neural network trained to model large-scale neural dynamics, serving as a computational surrogate of the brain. By systematically perturbing all regions in the surrogate brain and analyzing the resulting responses in other regions, NPI maps the directionality, strength, and excitatory/inhibitory properties of brain-wide EC. Validation of NPI on generative models with known ground-truth EC demonstrates its superiority over existing methods such as Granger causality and dynamic causal modeling. When applied to resting-state fMRI data across diverse datasets, NPI reveals consistent, structurally supported EC patterns. Furthermore, comparisons with cortico-cortical evoked potentials data show a strong resemblance between NPI-inferred EC and real stimulation propagation patterns. By transitioning from correlational to causal understandings of brain functionality, NPI marks a stride in decoding the brain's functional architecture and facilitating both neuroscience studies and clinical applications.
+## 这项研究的突破与创新
 
-## **Introduction**
+传统功能连接主要描述两个脑区“是否一起变化”，但相关性本身不说明方向，也不等于因果影响。NPI 的关键创新是把观测数据用于训练一个可运行的脑动力学代理模型，然后在代理模型内部进行系统性虚拟刺激：
 
-<img src=".\img\NPI_framework.jpg" alt="NPI_framework" style="zoom:80%;" />
+1. **从相关描述走向方向性推断**：不只计算对称的 FC，而是估计“源区 → 目标区”的有向 EC。
+2. **把难以在人脑中全面实施的刺激实验转移到代理模型中**：可以逐个扰动全脑区域，并控制扰动位置、幅度和形式。
+3. **兼顾非线性动力学与大规模脑区建模**：代理模型可以使用 MLP、CNN、RNN 或 VAR，并可扩展到不同脑图谱和 ROI 数量。
+4. **提供多层验证路径**：在有真实生成机制的模拟数据上比较 ground-truth EC，在真实 fMRI 上检查模型 FC 与经验 FC 的一致性，并进一步与刺激传播/结构连接等独立证据比较。
 
-This repository contains the code and documentation of the NPI framework, a tool designed for mapping whole-brain EC in the brain. NPI operates by first training an ANN to mimic the complex dynamics of the brain based on the observed neural data. Once trained, virtual perturbations are applied to specific regions of the ANN to simulate the effect of neural stimulation. By monitoring the responses in other brain regions, NPI constructs a comprehensive map of the causal relationships, detailing how each area influences others across the brain. This process allows for the assessment of not only the presence but also the direction and excitatory/inhibitory properties of neural connections, contributing to a deeper comprehension of the brain's functional architecture.
+这里的突破不是声称“神经网络自动发现了人脑因果关系”，而是提出了一条可检验的工作流：先验证模型能否复现动力学，再验证虚拟扰动结果是否与独立方向性证据一致。
 
-## **Methodology**
+## 现实意义
 
-<img src=".\img\dynamics.gif" alt="dynamics" style="zoom:100%;" />
+如果经过严格验证，NPI 类方法可以帮助研究者在不对每个脑区进行真实刺激的情况下，生成全脑尺度的候选 EC 图，用于理解信息传播、脑网络组织和疾病相关连接变化。对脑机接口和神经技术而言，它可能帮助：
 
-1. **Utilize an ANN to serve as a surrogate brain.**
+- 选择更合理的刺激靶点和候选网络通路；
+- 比较不同受试者、状态或疾病群体的方向性连接；
+- 为闭环 BCI、神经调控和数字脑模型提供可解释的动力学先验；
+- 在产品研发早期筛选假设、减少昂贵或侵入性的验证次数。
 
-   NPI utilizes ANN to learn the brain’s complex, nonlinear dynamics directly from data. This approach allows NPI to adapt to a wide range of data types and dynamics. The use of advanced AI techniques, such as pre-training (to train a group-level surrogate model) and fine-tuning (to obtain individual-level surrogate models), further enhances our model’s applicability to both group-level and individual-level analyses.
+这些是研究和工程上的潜在用途，不是未经验证的临床结论。实际转化仍需要独立数据、跨数据集复现、安全性评估和伦理/监管审查。
 
-2. **Apply virtual perturbation to ANN for inferring EC.**
+## 如何复用这项研究
 
-   NPI provides flexibility in the pattern of perturbations once the surrogate model is well-trained. It is not constrained to a fixed-size perturbation and can accommodate various forms and scales of perturbations, tailored to specific research needs. This adaptability enhances NPI’s applicability across diverse experimental settings and research questions.
+建议按以下顺序复用，而不是直接把模型套到新数据上：
 
-## **Requirements**
+1. **先复现模拟实验**：确认训练损失下降、模型 FC 能重现经验 FC，并检查 NPI EC 与已知真实 EC/SC 的相关性。
+2. **再做外部数据验证**：准备形状为 `[时间点, ROI]` 的数据，并记录图谱、预处理、TR、受试者和 run 信息。
+3. **准备独立方向性基准**：例如生成模型的真实连接、刺激传播数据、CCEP、解剖结构连接或其他经过说明的方向性指标。
+4. **报告不确定性和失败情况**：至少报告预测误差、FC 相似度、EC 与外部基准的一致性、扰动幅度敏感性以及跨受试者/跨 run 稳定性。
 
-**Operating Systems**: Windows 10, Ubuntu 20.04
+本 fork 后续的复现代码会与作者原始代码分开，确保读者能够区分“原论文实现”和“新增验证工具”。
 
-**Python Version**: 3.12+
+这里的“有效连接”是对学习到的代理动力学系统进行虚拟扰动后得到的有向影响估计。它不能直接等同于对人脑观测数据本身作出的生物学因果证明。
 
-**Dependencies**: See `requirements.txt` file for details.
+## 论文方法概览
 
-**Non-standard Hardware Requirements**: No non-standard hardware is required to run this software.
+### 1. 用神经网络学习代理脑
 
-**Note on PyTorch**: We recommend installing the GPU version of PyTorch, especially if you plan to simulate large datasets. Running NPI can be computationally intensive and may take an extended period when running on CPU.
+给定包含多个脑区的时间序列，模型学习：
 
-## **Installation**
+```text
+[x(t-k+1), ..., x(t)]  ->  神经网络代理模型  ->  x(t+1)
+```
 
-1. Clone the repository: `git clone https://github.com/ncclab-sustech/NPI`.
-2. Navigate to the project directory: `cd NPI`.
-3. Install dependencies: `pip install -r requirements.txt`.
+其中每个 `x(t)` 是所有 ROI 在时刻 `t` 的活动向量。仓库提供 MLP、CNN、RNN 和 VAR 等代理模型。训练目标是下一时刻预测误差，通常使用均方误差（MSE）和 Adam 优化器。
 
-Typical installation time is approximately 5 minutes on a "normal" desktop computer.
+### 2. 用随机噪声滚动得到模型 FC
 
-## **How to run**
+训练完成后，将模型的预测结果反馈给下一步，并持续加入噪声，生成较长的模型时间序列。对该序列计算相关矩阵，得到模型功能连接（model FC），再与经验时间序列的 FC 比较。
 
-The notebook `.ipynb` files contain step-by-step instructions, including how to load and prepare your data, train an ANN as a surrogate brain, simulate long time series under noise-driven conditions and calculate the model functional connectivity (FC), and perturb the surrogate brain to obtain EC.
+### 3. 用虚拟扰动估计有向 EC
 
-## **Demo examples**
+对每个源脑区 `i`，在输入历史的最后一个时间步增加扰动，重新计算模型输出。源区 `i` 引起目标区 `j` 的平均响应被写入 EC 矩阵的 `(i, j)` 位置：
 
-Demos `NPI_demo(RNN).ipynb` and `NPI_demo(WBM).ipynb` show the application of NPI to simulated data derived from recurrent neural network (RNN) and whole-brain model (WBM) under given structural connectivity (SC). These demos serve to illustrate the process of applying NPI to infer EC, and comparing the NPI-inferred EC with ground-truth EC and SC. Demo `NPI_demo(fMRI).ipynb` shows applying of NPI on real individual fMRI data from HCP dataset to infer individual EC.
+```text
+EC[i, j] = mean(model(扰动 i 后的输入) - model(原始输入))
+```
 
-**Demo 1: RNN synthetic data**
+因此矩阵的行表示源区，列表示目标区。正值通常表示兴奋性方向，负值通常表示抑制性方向；具体解释仍依赖数据预处理、扰动尺度和模型拟合质量。
 
-- **Overview**: Demo `NPI_demo(RNN).ipynb` applies NPI to ground-truth RNN simulated data. It encompasses the generation of synthetic neural signals, obtaining ground-truth EC by direct perturbation of the RNN, applying NPI to infer EC from the RNN simulated data, and a comparison of the NPI-inferred EC with the ground-truth EC and SC, assessing the accuracy and reliability of the NPI framework in capturing directed causal interactions.
-- **Simulation data resources**: Located in the `RNN_simulation data` folder, we provide the code necessary for using RNN to generate synthetic neural data and ground-truth EC. The folder contains detailed descriptions of the model parameters and simulation process.
+## 仓库内容
 
-**Demo 2: WBM synthetic data**
+- `NPI.py`：代理模型、训练、模型 FC 和模型 EC 的核心实现。
+- `NPI_demo(RNN).ipynb`：带已知结构连接/真实 EC 的 RNN 合成数据示例。
+- `NPI_demo(WBM).ipynb`：全脑模型（WBM）模拟示例。
+- `NPI_demo(fMRI).ipynb`：HCP 个体静息态 fMRI 示例。
+- `RNN_simulation_data/`、`WBM_simulation_data/`：合成信号及其参考连接矩阵。
+- `real_fMRI_data/`：仓库提供的 HCP 个体数据示例。
+- `Whole-brain_EC/`：不同脑图谱下的群体 EC 资源。
 
-- **Overview**: Demo `NPI_demo(WBM).ipynb` applies NPI to WBM simulated data. It encompasses the generation of synthetic neural signals, obtaining ground-truth EC by direct perturbation of the WBM, applying NPI to infer EC from the WBM simulated data, and a comparison of the NPI-inferred EC with the ground-truth EC and SC, assessing the accuracy and reliability of the NPI framework in capturing direct causal interactions.
-- **Simulation data resources**: Located in the `WBM_simulation data` folder, we provide the code necessary for using RNN to generate synthetic neural data and ground-truth EC. The folder contains detailed descriptions of the model parameters and simulation process.
+## 安装与运行
 
-**Demo 3: fMRI data from HCP dataset**
+```bash
+git clone https://github.com/ArisLiWind/NPI.git
+cd NPI
+pip install -r requirements.txt
+jupyter notebook
+```
 
-- **Overview**: Demo `NPI_demo(fMRI).ipynb` applies NPI to real fMRI data from HCP dataset of an individual. It encompasses applying NPI to infer EC from BOLD signals of an individual and a comparison of model FC and empirical FC.
+建议先运行 `NPI_demo(RNN).ipynb`，因为它同时提供模拟信号、结构连接和真实 EC，最适合检查“训练—模型 FC—虚拟扰动 EC—参考矩阵比较”的完整链路。
 
-**How to run the demos**
+## 外部数据验证注意事项
 
-1. **Launch Jupyter Notebook**: Start from the project directory by launching the Jupyter Notebook.
-2. **Open the demo notebook**: Select the demo notebook corresponding to either RNN or WBM synthetic data.
-3. **Follow the instructions**: Each notebook provides step-by-step instructions for loading data, training the model, applying NPI, and analyzing results.
-4. **Expected output**: The notebook will display output cells after execution. (Model FC closely resembles empirical FC, while NPI-inferred EC shows a strong correspondence with both ground-truth EC and SC.)
-5. **Expected run time**: Expected total run time for the three demos is approximately 30 minutes on a "normal" desktop computer.
+外部数据应先整理为 `[时间点, ROI]` 的矩阵，并明确 ROI 图谱、时间单位、预处理方法和训练/测试划分。若要验证 EC，最好同时提供独立的刺激传播、已知生成模型连接或其他方向性基准；只有经验 FC 时，只能验证动力学拟合和 FC 一致性，不能单独证明 EC 正确。
 
-## **Whole-brain EC resources**
+不要把不同受试者或不同 run 直接拼成一条连续时间序列；应按受试者/run 独立训练或进行明确的组水平建模。
 
-Within the `Whole-brain_EC` directory, we provide EC data across various brain atlases, offering insights into brain connectivity research. The EC matrices represent the causal interactions between different brain regions, derived from resting-state fMRI data of subjects within the Human Connectome Project (HCP) dataset. A row of the EC matrix represents the output EC from a source region to all other regions. A column of the EC matrix represents the input EC from all other regions to a target region.
+## 引用
 
-Specifically, we calculated the EC matrices based on the MMP (360 regions), AAL (116 regions), MSDL (39 regions) atlases across 800 subjects and the Schaefer2018 atlases (with 100, 200, ..., 1000 regions) across 100 subjects. For each atlas, we calculated the individual EC matrices for all subjects and then averaged these matrices at the group level to obtain a representative EC matrix for each atlas. All EC matrices are normalized so that the strongest connection in each matrix has a value of 1.
+```text
+Luo, Z., Peng, K., Liang, Z. et al. Mapping effective connectivity by
+virtually perturbing a surrogate brain. Nature Methods (2025).
+https://doi.org/10.1038/s41592-025-02654-x
+```
 
-We provide a notebook file `Whole-brain_EC/Whole-brain_EC.ipynb` that allow for the visualization of these EC matrices. Offering these detailed EC resources, we aim to facilitate research into the structural and functional interplay of the brain and support the development of novel diagnostic and therapeutic strategies in neuroscience.
+## 许可证与联系
 
-<img src=".\img\ebc.jpg" alt="NPI_framework" style="zoom:80%;" />
-
-## **How to cite**
-
-If you use NPI in your research, please cite our paper:
-
-- Luo, Z., Peng, K., Liang, Z. *et al.* Mapping effective connectivity by virtually perturbing a surrogate brain. *Nat Methods* (2025). [https://doi.org/10.1038/s41592-025-02654-x](https://doi.org/10.1038/s41592-025-02654-x)
-
-## **Contact**
-
-For any questions/comments, please contact [NCC Lab](https://www.sustech.edu.cn/en/faculties/liuquanying.html).
-
-## **Copyright**
-
-Copyright © 2024 NCC Lab, Southern University of Science and Technology, Shenzhen, China.
+原仓库使用 Apache-2.0 许可证。问题和评论请联系 [NCC Lab](https://www.sustech.edu.cn/en/faculties/liuquanying.html)。
