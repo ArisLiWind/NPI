@@ -1,5 +1,19 @@
 # NPI
 
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a>
+</p>
+
+> This fork keeps the original NPI implementation and documentation structure. The current fork-level additions are limited to bilingual documentation and a reproducibility plan; the scientific method and training code are not changed here.
+
+## **Research context and this fork**
+
+NPI (Neural Perturbational Inference) was developed by the NCC Lab at Southern University of Science and Technology (SUSTech), and published as *Mapping effective connectivity by virtually perturbing a surrogate brain* in *Nature Methods* (2025). This repository is the authors' code and data release for that work.
+
+This fork is intended to make the original work easier to understand and reproduce for Chinese-speaking users. It preserves the upstream experiments, notebooks, simulation data, and pretrained whole-brain EC resources, while adding a Chinese README first. A later, clearly separated reproduction layer can use the provided synthetic data and independent external datasets to check surrogate prediction, model FC, and inferred EC without silently changing the original implementation.
+
+For the scientific interpretation, “effective connectivity” here means directed influence estimated by perturbing a learned surrogate dynamical system; it should not be read as direct proof of biological causality in the measured human data.
+
 [Mapping effective connectivity by virtually perturbing a surrogate brain](https://www.nature.com/articles/s41592-025-02654-x)
 
 ## **Abstract**
