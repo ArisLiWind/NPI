@@ -4,6 +4,43 @@
   <a href="README.en.md">English</a> · <a href="README.md">简体中文</a>
 </p>
 
+[![Nature Methods](https://img.shields.io/badge/Nature%20Methods-2025-7A1FA2)](https://doi.org/10.1038/s41592-025-02654-x)
+[![arXiv](https://img.shields.io/badge/arXiv-2301.00148-B31B1B?logo=arxiv&logoColor=white)](https://arxiv.org/abs/2301.00148)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
+> NPI（Neural Perturbational Inference，神经扰动推断）是一个数据驱动的全脑有效连接研究框架：先从脑信号学习一个 AI 代理脑，再在代理脑中逐个虚拟扰动脑区，估计“源区 → 目标区”的方向性影响。
+
+## 一句话认识 NPI
+
+```text
+观测脑信号 → 学习神经动力学 → 构建代理脑 → 虚拟扰动 → 推断全脑有效连接（EC）
+```
+
+它试图把传统上难以对全脑每个区域逐一实施的“刺激—记录”实验，转化为可计算、可重复、可比较的模型实验。NPI 不是把相关性矩阵直接命名为因果关系，而是要求先验证代理模型能否复现脑动力学，再检验虚拟扰动结果是否符合独立证据。
+
+## 成果来源与论文报告的验证结果
+
+本项目由南方科技大学 Neural Computing and Control Lab（NCC Lab）提出，对应论文是 [Mapping effective connectivity by virtually perturbing a surrogate brain](https://doi.org/10.1038/s41592-025-02654-x)，同时可通过 [arXiv:2301.00148](https://arxiv.org/abs/2301.00148) 查看早期公开版本。论文及项目公开材料报告了以下验证路径：
+
+- 在具有已知真实 EC 的生成模型上，比较 NPI 与 Granger causality、dynamic causal modeling 等方法；
+- 在静息态 fMRI 上，检查模型 FC 是否接近经验 FC，并观察推断出的 EC 是否具有结构支持的一致模式；
+- 将 NPI 推断的 EC 与皮层—皮层诱发电位（CCEP）等真实刺激传播证据比较；
+- 发布 MMP、AAL、MSDL 和 Schaefer2018 等不同图谱下的全脑 EC 资源。
+
+这些是原论文/官方材料报告的研究结果，不等同于对所有数据集都保证有效。真实复用仍需独立数据、跨受试者验证和方向性基准。
+
+### 本 fork 的可复现结果
+
+我们使用仓库官方 `NPI.py`、RNN 模拟数据 seed 00 和原始训练参数完成了一次复现：
+
+```text
+模型 FC vs 经验 FC：r = 0.8912
+NPI EC vs 真实 EC：r = 0.9009
+NPI EC vs SC：      r = 0.8537
+```
+
+复现脚本和指标报告见 [`reproduce_official_rnn.py`](reproduce_official_rnn.py) 与 [`reproduction_results/rnn_seed00_metrics.json`](reproduction_results/rnn_seed00_metrics.json)。这些是本 fork 的一次 seed 00 结果，后续需要通过多 seed、跨受试者和外部数据继续检验稳定性。
+
 > 本 fork 保留原始 NPI 的代码、实验和数据结构。当前新增内容仅限于双语文档与后续复现规划，不改变原论文方法和训练代码。
 
 ## 成果来源与本 fork 的目标
@@ -22,12 +59,6 @@ NPI（Neural Perturbational Inference，神经扰动推断）由南方科技大�
 ## 面向哪些人
 
 这个仓库不仅面向复现论文的专业神经科学研究者，也面向希望理解脑信号建模的脑机接口爱好者、需要评估脑连接算法的研究团队，以及探索神经技术产品化和临床转化的商业化工作者。
-
-不同读者可以从不同入口开始：
-
-- 脑机接口爱好者：先阅读本节和 `NPI_demo(RNN).ipynb`，理解“时间序列 → 代理脑 → 虚拟扰动 → 有向连接”的完整链路。
-- 研究者：使用带有已知 EC/SC 的 RNN 或 WBM 模拟数据做可控验证，再接入自己的 ROI 时间序列和独立方向性基准。
-- 商业化工作者：重点关注数据需求、模型稳定性、跨个体泛化、可解释性和外部验证，不应把一次 EC 图直接当作临床或产品结论。
 
 ## 这项研究的突破与创新
 
