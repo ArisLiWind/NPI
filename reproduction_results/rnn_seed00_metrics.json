@@ -1,0 +1,17 @@
+{
+  "seed": 0,
+  "epochs": 80,
+  "signals_shape": [
+    8000,
+    20
+  ],
+  "input_shape": [
+    7997,
+    60
+  ],
+  "final_train_mse": 0.4669196903705597,
+  "final_test_mse": 0.487635999917984,
+  "model_fc_vs_empirical_fc_r": 0.8911882317818295,
+  "npi_ec_vs_real_ec_r": 0.90091184881343,
+  "npi_ec_vs_sc_r": 0.8537174800311573
+}
